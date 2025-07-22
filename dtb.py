@@ -18,6 +18,11 @@ def clean_transaction_details(details):
 
 # === IIF Generator ===
 def generate_iif(df):
+    df['Credits'] = pd.to_numeric(df['Credits'].astype(str).str.replace(',', ''), errors='coerce').fillna(0.0)
+    df['Debits'] = pd.to_numeric(df['Debits'].astype(str).str.replace(',', ''), errors='coerce').fillna(0.0)
+    df['Charges'] = pd.to_numeric(df.get('Charges', 0).astype(str).str.replace(',', ''), errors='coerce').fillna(0.0)
+    df['Commission Amount'] = pd.to_numeric(df.get('Commission Amount', 0).astype(str).str.replace(',', ''), errors='coerce').fillna(0.0)
+
     output = StringIO()
     output.write("!TRNS\tTRNSTYPE\tDATE\tACCNT\tNAME\tAMOUNT\tMEMO\tDOCNUM\tCLEAR\n")
     output.write("!SPL\tTRNSTYPE\tDATE\tACCNT\tNAME\tAMOUNT\tMEMO\tDOCNUM\tCLEAR\n")
@@ -35,6 +40,7 @@ def generate_iif(df):
 
         sheet['Credits'] = pd.to_numeric(sheet['Credits'].astype(str).str.replace(',', ''), errors='coerce').fillna(0.0)
         sheet['Debits'] = pd.to_numeric(sheet['Debits'].astype(str).str.replace(',', ''), errors='coerce').fillna(0.0)
+
 
         docnum = str(row.get('Reference', ''))
         details = str(row.get('Transaction Details', ''))
