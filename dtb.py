@@ -18,10 +18,11 @@ def clean_transaction_details(details):
 
 # === IIF Generator ===
 def generate_iif(df):
-    df['Credits'] = pd.to_numeric(df['Credits'].astype(str).str.replace(',', ''), errors='coerce').fillna(0.0)
-    df['Debits'] = pd.to_numeric(df['Debits'].astype(str).str.replace(',', ''), errors='coerce').fillna(0.0)
-    df['Charges'] = pd.to_numeric(df.get('Charges', 0).astype(str).str.replace(',', ''), errors='coerce').fillna(0.0)
-    df['Commission Amount'] = pd.to_numeric(df.get('Commission Amount', 0).astype(str).str.replace(',', ''), errors='coerce').fillna(0.0)
+    # Ensure necessary columns exist and convert to numeric
+    for col in ['Credits', 'Debits', 'Charges', 'Commission Amount']:
+        if col not in df.columns:
+            df[col] = 0
+        df[col] = pd.to_numeric(df[col].astype(str).str.replace(',', ''), errors='coerce').fillna(0.0)
 
     output = StringIO()
     output.write("!TRNS\tTRNSTYPE\tDATE\tACCNT\tNAME\tAMOUNT\tMEMO\tDOCNUM\tCLEAR\n")
@@ -35,12 +36,8 @@ def generate_iif(df):
 
         try:
             date = pd.to_datetime(row['Transaction Date']).strftime('%m/%d/%Y')
-        except:
+        except Exception:
             continue
-
-        sheet['Credits'] = pd.to_numeric(sheet['Credits'].astype(str).str.replace(',', ''), errors='coerce').fillna(0.0)
-        sheet['Debits'] = pd.to_numeric(sheet['Debits'].astype(str).str.replace(',', ''), errors='coerce').fillna(0.0)
-
 
         docnum = str(row.get('Reference', ''))
         details = str(row.get('Transaction Details', ''))
@@ -91,4 +88,4 @@ if uploaded_file:
         st.download_button("📥 Download IIF File", data=iif_data, file_name="DTB_output.iif", mime="text/plain")
     except Exception as e:
         st.error(f"❌ Failed to read file: {e}")
-        st.info("Make sure it's a valid `.xls` file and `xlrd==1.2.0` is installed.")
+        st.info("Have a Good Day.")
