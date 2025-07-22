@@ -53,24 +53,24 @@ def generate_iif(df):
         elif trn_type == "Payment" and row['Payment Method'] == "CREDITCARDMC_CYB_KE":
             # Payment, unknown source, suspense
             output.write(f"TRNS\tDEPOSIT\t{date}\tPesapal\t{payee}\t{credit}\t{memo}\t{docnum}\n")
-            output.write(f"SPL\tDEPOSIT\t{date}\tSuspense Income\t{payee}\t{-credit}\t{memo}\t{docnum}\n")
+            output.write(f"SPL\tDEPOSIT\t{date}\tAsk My Accountant\t{payee}\t{-credit}\t{memo}\t{docnum}\n")
             output.write("ENDTRNS\n")
 
         elif charge > 0 or commission > 0:
             total_fees = charge + commission
             output.write(f"TRNS\tCHECK\t{date}\tPesapal\tBank Charges DTB\t{-total_fees}\tBank fees\t{docnum}\n")
-            output.write(f"SPL\tCHECK\t{date}\tBank Charges:Bank Charges DTB\t\t{total_fees}\tBank fees\t{docnum}\n")
+            output.write(f"SPL\tCHECK\t{date}\tBank Service Charges:Bank Charges - DTB\t\t{total_fees}\tBank fees\t{docnum}\n")
             output.write("ENDTRNS\n")
 
     return output.getvalue()
 
-st.title("Pesapal to QuickBooks IIF Converter")
+st.title("DTB to QuickBooks IIF Converter")
 
-uploaded_file = st.file_uploader("Upload Pesapal Excel File", type=["xlsx"])
+uploaded_file = st.file_uploader("Upload DTB Excel File", type=["xlsx"])
 
 if uploaded_file:
     sheet = pd.read_excel(uploaded_file, skiprows=17)
     st.write("### Preview", sheet.head())
     iif_data = generate_iif(sheet)
 
-    st.download_button("Download IIF File", data=iif_data, file_name="pesapal_output.iif", mime="text/plain")
+    st.download_button("Download IIF File", data=iif_data, file_name="DTB_output.iif", mime="text/plain")
