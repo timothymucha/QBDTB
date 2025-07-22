@@ -66,7 +66,7 @@ def generate_iif(df):
 
 st.title("DTB to QuickBooks IIF Converter")
 
-uploaded_file = st.file_uploader("Upload DTB Excel File", type=["xlsx"])
+uploaded_file = st.file_uploader("Upload DTB Excel File", type=["xls"])
 
 if uploaded_file:
     sheet = pd.read_excel(uploaded_file, skiprows=17)
