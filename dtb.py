@@ -33,6 +33,9 @@ def generate_iif(df):
         except:
             continue
 
+        sheet['Credits'] = pd.to_numeric(sheet['Credits'].astype(str).str.replace(',', ''), errors='coerce').fillna(0.0)
+        sheet['Debits'] = pd.to_numeric(sheet['Debits'].astype(str).str.replace(',', ''), errors='coerce').fillna(0.0)
+
         docnum = str(row.get('Reference', ''))
         details = str(row.get('Transaction Details', ''))
         debit = float(row.get('Debits') or 0)
