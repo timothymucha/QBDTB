@@ -24,7 +24,12 @@ def generate_iif(df):
             df[col] = 0
         df[col] = pd.to_numeric(df[col].astype(str).str.replace(',', ''), errors='coerce').fillna(0.0)
 
-    # Transaction types that map directly to Bank Charges - DTB
+    output = StringIO()
+    output.write("!TRNS\tTRNSTYPE\tDATE\tACCNT\tNAME\tAMOUNT\tMEMO\tDOCNUM\tCLEAR\n")
+    output.write("!SPL\tTRNSTYPE\tDATE\tACCNT\tNAME\tAMOUNT\tMEMO\tDOCNUM\tCLEAR\n")
+    output.write("!ENDTRNS\n")
+
+    # Define type mappings
     bank_charge_types = {
         "PESA LINK TXN CHG",
         "EXCISE DUTY",
@@ -32,19 +37,17 @@ def generate_iif(df):
         "I24/7 TXN CHARGE"
     }
 
-    output = StringIO()
-    output.write("!TRNS\tTRNSTYPE\tDATE\tACCNT\tNAME\tAMOUNT\tMEMO\tDOCNUM\tCLEAR\n")
-    output.write("!SPL\tTRNSTYPE\tDATE\tACCNT\tNAME\tAMOUNT\tMEMO\tDOCNUM\tCLEAR\n")
-    output.write("!ENDTRNS\n")
+    ask_my_accountant_types = {
+        "MOBILE BANKING TXN"
+    }
 
     for _, row in df.iterrows():
         trn_type = str(row.get('Transaction Type')).strip().upper()
 
-        # 🚫 Skip all MPESA FUNDS TRANSFER transactions
+        # 🚫 Skip all MPESA FUNDS TRANSFER
         if trn_type == "MPESA FUNDS TRANSFER":
             continue
 
-        # Parse date
         try:
             date = pd.to_datetime(row['Transaction Date']).strftime('%m/%d/%Y')
         except Exception:
@@ -54,12 +57,13 @@ def generate_iif(df):
         details = str(row.get('Transaction Details', ''))
         debit = float(row.get('Debits') or 0)
         credit = float(row.get('Credits') or 0)
-        charges = float(row.get('Charges') or 0)
-        commission = float(row.get('Commission Amount') or 0)
 
         payee, memo = clean_transaction_details(details)
 
-        # ✅ Direct Bank Charges mapping
+        charges = float(row.get('Charges') or 0)
+        commission = float(row.get('Commission Amount') or 0)
+
+        # === Direct Bank Charges mapping ===
         if trn_type in bank_charge_types:
             amount = debit if debit > 0 else (charges + commission)
             fee_memo = f"{trn_type} - {payee}"
@@ -68,21 +72,29 @@ def generate_iif(df):
             output.write("ENDTRNS\n")
             continue
 
-        # Pesalink payments to vendors
+        # === Ask My Accountant mapping ===
+        if trn_type in ask_my_accountant_types:
+            amount = debit if debit > 0 else credit
+            output.write(f"TRNS\tGENERAL JOURNAL\t{date}\tDiamond Trust Bank\t{payee}\t{-amount:.2f}\t{memo}\t{docnum}\tN\n")
+            output.write(f"SPL\tGENERAL JOURNAL\t{date}\tAsk My Accountant\t{payee}\t{amount:.2f}\t{memo}\t{docnum}\tN\n")
+            output.write("ENDTRNS\n")
+            continue
+
+        # === PesaLink payments to vendors ===
         if trn_type == "PESA LINK TRANSACTION" and debit > 0:
             output.write(f"TRNS\tCHECK\t{date}\tDiamond Trust Bank\t{payee}\t{-debit:.2f}\t{memo}\t{docnum}\tN\n")
             output.write(f"SPL\tCHECK\t{date}\tAccounts Payable\t{payee}\t{debit:.2f}\t{memo}\t{docnum}\tN\n")
             output.write("ENDTRNS\n")
             continue
 
-        # Unexpected money in — go to suspense
+        # === Unexpected money in — go to suspense ===
         if credit > 0:
             output.write(f"TRNS\tDEPOSIT\t{date}\tDiamond Trust Bank\t{payee}\t{credit:.2f}\t{memo}\t{docnum}\tN\n")
             output.write(f"SPL\tDEPOSIT\t{date}\tAsk My Accountant\t{payee}\t{-credit:.2f}\t{memo}\t{docnum}\tN\n")
             output.write("ENDTRNS\n")
             continue
 
-        # Bank Charges & Commissions for anything else
+        # === Bank Charges & Commissions (fallback) ===
         if charges > 0 or commission > 0:
             total_fees = charges + commission
             fee_memo = f"Bank charges & commissions - {payee}"
@@ -96,12 +108,11 @@ def generate_iif(df):
 st.set_page_config(page_title="DTB to QuickBooks IIF Converter", layout="centered")
 st.title("🏦 DTB to QuickBooks IIF Converter")
 
-uploaded_file = st.file_uploader("📤 Upload DTB Excel File (.xls or .xlsx)", type=["xls", "xlsx"])
+uploaded_file = st.file_uploader("📤 Upload DTB Excel File (.xls)", type=["xls"])
 
 if uploaded_file:
     try:
-        # Try reading with flexible skiprows (adjust if DTB changes format)
-        df = pd.read_excel(uploaded_file, skiprows=17, engine="xlrd" if uploaded_file.name.endswith(".xls") else None)
+        df = pd.read_excel(uploaded_file, skiprows=17, engine="xlrd")
         st.success("✅ File successfully loaded.")
         st.write("### 🔍 Preview of Data", df.head())
 
@@ -109,4 +120,4 @@ if uploaded_file:
         st.download_button("📥 Download IIF File", data=iif_data, file_name="DTB_output.iif", mime="text/plain")
     except Exception as e:
         st.error(f"❌ Failed to read file: {e}")
-        st.info("Please ensure the file is in DTB's exported Excel format.")
+        st.info("Have a Good Day.")
