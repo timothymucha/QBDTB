@@ -53,7 +53,10 @@ def generate_iif(df):
         except Exception:
             continue
 
-        docnum = str(row.get('Reference', ''))
+        # Use last 9 characters from Reference column
+        raw_ref = str(row.get('Reference', '')).strip()
+        docnum = raw_ref[-9:] if len(raw_ref) > 9 else raw_ref
+
         details = str(row.get('Transaction Details', ''))
         debit = float(row.get('Debits') or 0)
         credit = float(row.get('Credits') or 0)
