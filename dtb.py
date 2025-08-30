@@ -5,14 +5,21 @@ import re
 
 # === Payee & Memo extractor ===
 def clean_transaction_details(details):
-    match = re.match(r".*\|(.*?)\|(.*?)\|(.*?)\\s+-?\\d+.*", str(details))
-    if match:
-        payee = match.group(2).strip()
-        memo = match.group(3).strip()
+    parts = str(details).split("|")
+    if len(parts) >= 4:
+        # Structured DTB format
+        payee = parts[1].strip()           # always 2nd element
+        memo = parts[3].strip()            # 4th element
+    elif len(parts) >= 2:
+        # If only 2 fields, use second one
+        payee = parts[1].strip()
+        memo = ""
     else:
-        payee = str(details).split("|")[0].strip()[:30]
+        # No separators
+        payee = str(details).strip()[:30]
         memo = ""
     return payee or "Unknown", memo or "DTB Transaction"
+
 
 # === IIF Generator ===
 def generate_iif(df):
