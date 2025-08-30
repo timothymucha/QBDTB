@@ -34,7 +34,7 @@ def generate_iif(df):
     output.write("!SPL\tTRNSTYPE\tDATE\tACCNT\tNAME\tAMOUNT\tMEMO\tDOCNUM\tCLEAR\n")
     output.write("!ENDTRNS\n")
 
-    bank_charge_types = {"PESA LINK TXN CHG", "EXCISE DUTY", "MOBILE BANKING TXN CHARGE", "I24/7 TXN CHARGE"}
+    bank_charge_types = {"PESA LINK TXN CHG", "EXCISE DUTY", "MOBILE BANKING TXN CHARGE", "I24/7 TXN CHARGE", "CHEQUE BOOK CHARGES"}
     ask_my_accountant_types = {"MOBILE BANKING TXN"}
 
     for _, row in df.iterrows():
