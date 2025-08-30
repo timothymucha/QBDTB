@@ -7,7 +7,7 @@ import re
 def clean_transaction_details(details):
     match = re.match(r".*\|(.*?)\|(.*?)\|(.*?)\\s+-?\\d+.*", str(details))
     if match:
-        payee = match.group(1).strip()
+        payee = match.group(2).strip()
         memo = match.group(3).strip()
     else:
         payee = str(details).split("|")[0].strip()[:30]
