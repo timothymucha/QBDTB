@@ -75,7 +75,7 @@ def generate_iif(df):
             output.write("ENDTRNS\n")
             continue
 
-        if (trn_type == "PESA LINK TRANSACTION" and debit > 0) or (trn_type == "CHEQUE PAYMENT" and debit > 0):
+        if (trn_type == "PESA LINK TRANSACTION" and debit > 0) or (trn_type == "IN-HOUSE CHEQUE" and debit > 0) or (trn_type == "INWARD CLEARING" and debit > 0):
             output.write(f"TRNS\tCHECK\t{date}\tDiamond Trust Bank\t{payee}\t{-debit:.2f}\t{memo}\t{docnum}\tN\n")
             output.write(f"SPL\tCHECK\t{date}\tAccounts Payable\t{payee}\t{debit:.2f}\t{memo}\t{docnum}\tN\n")
             output.write("ENDTRNS\n")
