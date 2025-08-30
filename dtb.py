@@ -75,13 +75,13 @@ def generate_iif(df):
             output.write("ENDTRNS\n")
             continue
 
-        if (trn_type == "MOBILE BANKING FT TXN" and debit > 0) or (trn_type == "i24/7 PESALINK" and debit > 0)  or (trn_type == "PESA LINK TRANSACTION" and debit > 0) or (trn_type == "IN-HOUSE CHEQUE" and debit > 0) or (trn_type == "INWARD CLEARING" and debit > 0):
+        if (trn_type == "MOBILE BANKING FT TXN" and debit > 0)  or (trn_type == "PESA LINK TRANSACTION" and debit > 0) or (trn_type == "IN-HOUSE CHEQUE" and debit > 0) or (trn_type == "INWARD CLEARING" and debit > 0):
             output.write(f"TRNS\tCHECK\t{date}\tDiamond Trust Bank\t{payee}\t{-debit:.2f}\t{memo}\t{docnum}\tN\n")
             output.write(f"SPL\tCHECK\t{date}\tAccounts Payable\t{payee}\t{debit:.2f}\t{memo}\t{docnum}\tN\n")
             output.write("ENDTRNS\n")
             continue
 
-        if credit > 0:
+        if (credit > 0) or (trn_type == "i24/7 PESALINK" and credit > 0):
             output.write(f"TRNS\tTRANSFER\t{date}\tDiamond Trust Bank\t{payee}\t{credit:.2f}\t{memo}\t{docnum}\tN\n")
             output.write(f"SPL\tTRANSFER\t{date}\tExpress Bofa\t{payee}\t{-credit:.2f}\t{memo}\t{docnum}\tN\n")
             output.write("ENDTRNS\n")
