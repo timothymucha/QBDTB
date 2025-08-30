@@ -1,5 +1,3 @@
-# dtb_iif_converter.py
-
 import streamlit as st
 import pandas as pd
 from io import StringIO
@@ -7,7 +5,7 @@ import re
 
 # === Payee & Memo extractor ===
 def clean_transaction_details(details):
-    match = re.match(r".*\|(.*?)\|(.*?)\|(.*?)\s+-?\d+.*", str(details))
+    match = re.match(r".*\|(.*?)\|(.*?)\|(.*?)\\s+-?\\d+.*", str(details))
     if match:
         payee = match.group(1).strip()
         memo = match.group(3).strip()
@@ -29,22 +27,13 @@ def generate_iif(df):
     output.write("!SPL\tTRNSTYPE\tDATE\tACCNT\tNAME\tAMOUNT\tMEMO\tDOCNUM\tCLEAR\n")
     output.write("!ENDTRNS\n")
 
-    # Define type mappings
-    bank_charge_types = {
-        "PESA LINK TXN CHG",
-        "EXCISE DUTY",
-        "MOBILE BANKING TXN CHARGE",
-        "I24/7 TXN CHARGE"
-    }
-
-    ask_my_accountant_types = {
-        "MOBILE BANKING TXN"
-    }
+    bank_charge_types = {"PESA LINK TXN CHG", "EXCISE DUTY", "MOBILE BANKING TXN CHARGE", "I24/7 TXN CHARGE"}
+    ask_my_accountant_types = {"MOBILE BANKING TXN"}
 
     for _, row in df.iterrows():
         trn_type = str(row.get('Transaction Type')).strip().upper()
 
-        # 🚫 Skip all MPESA FUNDS TRANSFER
+        # Skip MPESA FUNDS TRANSFER
         if trn_type == "MPESA FUNDS TRANSFER":
             continue
 
@@ -53,7 +42,6 @@ def generate_iif(df):
         except Exception:
             continue
 
-        # Use last 9 characters from Reference column
         raw_ref = str(row.get('Reference', '')).strip()
         docnum = raw_ref[-9:] if len(raw_ref) > 9 else raw_ref
 
@@ -62,11 +50,9 @@ def generate_iif(df):
         credit = float(row.get('Credits') or 0)
 
         payee, memo = clean_transaction_details(details)
-
         charges = float(row.get('Charges') or 0)
         commission = float(row.get('Commission Amount') or 0)
 
-        # === Direct Bank Charges mapping ===
         if trn_type in bank_charge_types:
             amount = debit if debit > 0 else (charges + commission)
             fee_memo = f"{trn_type} - {payee}"
@@ -75,7 +61,6 @@ def generate_iif(df):
             output.write("ENDTRNS\n")
             continue
 
-        # === Ask My Accountant mapping ===
         if trn_type in ask_my_accountant_types:
             amount = debit if debit > 0 else credit
             output.write(f"TRNS\tGENERAL JOURNAL\t{date}\tDiamond Trust Bank\t{payee}\t{-amount:.2f}\t{memo}\t{docnum}\tN\n")
@@ -83,21 +68,18 @@ def generate_iif(df):
             output.write("ENDTRNS\n")
             continue
 
-        # === PesaLink payments to vendors ===
         if trn_type == "PESA LINK TRANSACTION" and debit > 0:
             output.write(f"TRNS\tCHECK\t{date}\tDiamond Trust Bank\t{payee}\t{-debit:.2f}\t{memo}\t{docnum}\tN\n")
             output.write(f"SPL\tCHECK\t{date}\tAccounts Payable\t{payee}\t{debit:.2f}\t{memo}\t{docnum}\tN\n")
             output.write("ENDTRNS\n")
             continue
 
-        # === Unexpected money in — go to suspense ===
         if credit > 0:
             output.write(f"TRNS\tDEPOSIT\t{date}\tDiamond Trust Bank\t{payee}\t{credit:.2f}\t{memo}\t{docnum}\tN\n")
             output.write(f"SPL\tDEPOSIT\t{date}\tAsk My Accountant\t{payee}\t{-credit:.2f}\t{memo}\t{docnum}\tN\n")
             output.write("ENDTRNS\n")
             continue
 
-        # === Bank Charges & Commissions (fallback) ===
         if charges > 0 or commission > 0:
             total_fees = charges + commission
             fee_memo = f"Bank charges & commissions - {payee}"
