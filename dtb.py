@@ -83,7 +83,7 @@ def generate_iif(df):
 
         if credit > 0:
             output.write(f"TRNS\tTRANSFER\t{date}\tDiamond Trust Bank\t{payee}\t{credit:.2f}\t{memo}\t{docnum}\tN\n")
-            output.write(f"SPL\tTRANSFER\t{date}\tCash in Drawer\t{payee}\t{-credit:.2f}\t{memo}\t{docnum}\tN\n")
+            output.write(f"SPL\tTRANSFER\t{date}\tExpress Bofa\t{payee}\t{-credit:.2f}\t{memo}\t{docnum}\tN\n")
             output.write("ENDTRNS\n")
             continue
 
