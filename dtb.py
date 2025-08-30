@@ -70,8 +70,8 @@ def generate_iif(df):
 
         if trn_type in ask_my_accountant_types:
             amount = debit if debit > 0 else credit
-            output.write(f"TRNS\tGENERAL JOURNAL\t{date}\tDiamond Trust Bank\t{payee}\t{-amount:.2f}\t{memo}\t{docnum}\tN\n")
-            output.write(f"SPL\tGENERAL JOURNAL\t{date}\tAsk My Accountant\t{payee}\t{amount:.2f}\t{memo}\t{docnum}\tN\n")
+            output.write(f"TRNS\tCHECK\t{date}\tDiamond Trust Bank\t{payee}\t{-amount:.2f}\t{memo}\t{docnum}\tN\n")
+            output.write(f"SPL\tCHECK\t{date}\tAccounts Payable\t{payee}\t{amount:.2f}\t{memo}\t{docnum}\tN\n")
             output.write("ENDTRNS\n")
             continue
 
@@ -82,8 +82,8 @@ def generate_iif(df):
             continue
 
         if credit > 0:
-            output.write(f"TRNS\tDEPOSIT\t{date}\tDiamond Trust Bank\t{payee}\t{credit:.2f}\t{memo}\t{docnum}\tN\n")
-            output.write(f"SPL\tDEPOSIT\t{date}\tAsk My Accountant\t{payee}\t{-credit:.2f}\t{memo}\t{docnum}\tN\n")
+            output.write(f"TRNS\tTRANSFER\t{date}\tDiamond Trust Bank\t{payee}\t{credit:.2f}\t{memo}\t{docnum}\tN\n")
+            output.write(f"SPL\tTRANSFER\t{date}\Cash in Drawer\t{payee}\t{-credit:.2f}\t{memo}\t{docnum}\tN\n")
             output.write("ENDTRNS\n")
             continue
 
