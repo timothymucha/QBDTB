@@ -358,7 +358,7 @@ if uploaded_file:
             iif_text = generate_iif(df, threshold=fuzzy_threshold)
             st.success("IIF generated.")
             st.download_button(
-                "📥 Download petty_DTB.iif",
+                "📥 Download DTB.iif",
                 data=iif_text.encode("utf-8"),
                 file_name="DTB_output.iif",
                 mime="text/plain"
